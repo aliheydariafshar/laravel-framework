@@ -22,7 +22,8 @@ use Symfony\Component\HttpFoundation\Session\SessionInterface;
  */
 class Request extends SymfonyRequest implements Arrayable, ArrayAccess
 {
-    use Concerns\InteractsWithContentTypes,
+    use Concerns\CanBePrecognitive,
+        Concerns\InteractsWithContentTypes,
         Concerns\InteractsWithFlashData,
         Concerns\InteractsWithInput,
         Macroable;
@@ -449,9 +450,9 @@ class Request extends SymfonyRequest implements Arrayable, ArrayAccess
 
         $request->headers->replace($from->headers->all());
 
-        $request->setLocale($from->getLocale());
+        $request->setRequestLocale($from->getLocale());
 
-        $request->setDefaultLocale($from->getDefaultLocale());
+        $request->setDefaultRequestLocale($from->getDefaultLocale());
 
         $request->setJson($from->json());
 
@@ -568,6 +569,28 @@ class Request extends SymfonyRequest implements Arrayable, ArrayAccess
     public function setLaravelSession($session)
     {
         $this->session = $session;
+    }
+
+    /**
+     * Set the locale for the request instance.
+     *
+     * @param  string  $locale
+     * @return void
+     */
+    public function setRequestLocale(string $locale)
+    {
+        $this->locale = $locale;
+    }
+
+    /**
+     * Set the default locale for the request instance.
+     *
+     * @param  string  $locale
+     * @return void
+     */
+    public function setDefaultRequestLocale(string $locale)
+    {
+        $this->defaultLocale = $locale;
     }
 
     /**
@@ -699,8 +722,10 @@ class Request extends SymfonyRequest implements Arrayable, ArrayAccess
      */
     public function offsetExists($offset): bool
     {
+        $route = $this->route();
+
         return Arr::has(
-            $this->all() + $this->route()->parameters(),
+            $this->all() + ($route ? $route->parameters() : []),
             $offset
         );
     }
